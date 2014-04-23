@@ -1,0 +1,4 @@
+[19:05:41]logger init
+[19:05:41]logging to log_fpath='logs/hotspotter_logs_0000.out'
+[19:05:41][io] Caught Exception: error('/build/buildd/opencv-2.3.1/modules/imgproc/src/color.cpp:2789: error: (-215) scn == 3 || scn == 4 in function cvtColor\n',)
+[19:05:41][io] ERROR reading: '/lena.png'

@@ -1,0 +1,4 @@
+[14:20:08]logger init
+[14:20:08]logging to log_fpath='logs/hotspotter_logs_0003.out'
+[14:20:08][io] Caught Exception: error('/build/buildd/opencv-2.3.1/modules/imgproc/src/color.cpp:2789: error: (-215) scn == 3 || scn == 4 in function cvtColor\n',)
+[14:20:08][io] ERROR reading: '/zebra.jpg'
