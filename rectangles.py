@@ -1,11 +1,9 @@
 """
 
 TODO:
-DONE 1.) Restrict the polygon to rigid sides and 4 points (should not take too long)
-2.) add another polygon (this might take some time) - you can use a button click or a click down/up not near a current point to add a polygon
-done 3.) Input methods
-  done  3a.) click down, drag, click up [input method]
-  done  3b.) click down, click up, drag, click down, clock up [input method]
+1. create a function call to create a rectangle at a given set of points
+2.. Make 45 degree rotation - need help
+
 
 Interactive tool to draw mask on an image or image-like array.
 
@@ -61,7 +59,7 @@ class MaskCreator(object):
           line connecting two existing vertices
     """
     def __init__(self, ax, poly_xy=None, max_ds=10, line_width=4,      
-                 line_color=(1, 1, 1), face_color=(1, 1, 1)):
+                 line_color=(1, 1, 1), face_color=(0, 0,0)):
         self.showverts = True
         self.max_ds = max_ds
         self.fc_default = face_color
@@ -70,13 +68,14 @@ class MaskCreator(object):
         self._polyHeld = False
         self._thisPoly = None
         self.press1 = False;
+        self.canUncolor = False;
         self.poly_count = 0;
         if poly_xy is None:
             poly_xy = default_vertices(ax)
             
             #*********Start of list implementation
             Poly1 = Polygon(poly_xy, animated=True,
-                            fc=face_color, ec='none', alpha=0.2, picker=True)
+                            fc=face_color, ec='none', alpha=0, picker=True)
             self.polyList = [Poly1]
             self.poly_count+=1;
             self.polyList[0].num = 0;
@@ -90,10 +89,10 @@ class MaskCreator(object):
 
         x, y = zip(*self.polyList[0].xy)
         #line_color = 'none'
-        color = np.array(line_color) * .6
+        color = np.array(line_color)
         marker_face_color = line_color
         line_kwargs = {'lw': line_width, 'color': color, 'mfc': marker_face_color}
-        self.line = [plt.Line2D(x, y, marker='o', alpha=0.8, animated=True, **line_kwargs)]
+        self.line = [plt.Line2D(x, y, marker='o', alpha=1, animated=True, **line_kwargs)]
         self._update_line()
         self.ax.add_line(self.line[0])
 
@@ -116,6 +115,14 @@ class MaskCreator(object):
         #second polygon
 
     
+    def rotate45(self, poly):
+        'starting to figure out rotation'
+        'called when a certain button is clicked (currently when a key is clicked)'
+
+        'move the points clockwise'
+
+
+
 
 
     def get_mask(self, shape):
@@ -169,8 +176,10 @@ class MaskCreator(object):
 
         self.mouseX,self.mouseY = event.xdata, event.ydata
         if self._polyHeld is True or self._ind is not None:
-            self._thisPoly.set_facecolor('red');
+            self._thisPoly.set_alpha(.2)
+            self._thisPoly.set_facecolor('white')
         self.press1 = True;
+        self.canUncolor = False;
         self._update_line()
         self.canvas.restore_region(self.background)
         for n, poly in enumerate(self.polyList):
@@ -182,22 +191,29 @@ class MaskCreator(object):
         'whenever a mouse button is released'
         if self._polyHeld is True and (self._ind == None or self.press1 is False):
             self._polyHeld = False
-        elif self.press1 is True:
-            self.press1 = False;
+        
         ignore = not self.showverts or event.button != 1
         if ignore:
             return
-        if (self._ind is None) or self._polyHeld is False or (self._ind is not None and self.press1 is True) and self._thisPoly is not None:
-            self._thisPoly.set_facecolor(self.fc_default)
-            self._thisPoly = None
+        #print("self.uncolor: ", self.canUncolor, " self.press1: ", self.press1, " self._thisPoly: ", self._thisPoly)
+        
+
+        
+
+
+        if (self._ind is None) or self._polyHeld is False or (self._ind is not None and self.press1 is True) and self._thisPoly is not None and self.canUncolor is True:
+            self._thisPoly.set_alpha(0)
+
+        # if self.canUncolor is True and self.press1 is True:
+        #     print("trues")
+        #     self._thisPoly.set_facecolor(self.fc_default)
         self.update_UI();
+        self.press1 = False;
 
         if self._ind is None:
             return
-
-
         if self._thisPoly is None:
-            print("WARNING: Polygon unknown. Using default.")
+            print("WARNING: Polygon unknown. Using default. (2)")
             self._thisPoly = self.polyList[0]
         currX, currY = self._thisPoly.xy[self._ind]
 
@@ -206,23 +222,25 @@ class MaskCreator(object):
         if math.fabs(self.indX - currX)<3  and math.fabs(self.indY-currY)<3:
             
             return
+        if (self._ind is None) or self._polyHeld is False or (self._ind is not None and self.press1 is True) and self._thisPoly is not None:
+            self._thisPoly = None
         self._ind = None
         self._polyHeld = False;
 
     def draw_new_poly(self):
         coords = default_vertices(self.ax)
         Poly = Polygon(coords, animated=True,
-                            fc="green", ec='none', alpha=0.2, picker=True)
+                            fc="white", ec='none', alpha=0.2, picker=True)
         self.polyList.append(Poly)
         self.ax.add_patch(Poly)
         x, y = zip(*Poly.xy)
         #line_color = 'none'
-        color = np.array((1,1,1)) * .6
+        color = np.array((1,1,1))
         marker_face_color = (1,1,1)
         line_width = 4;
         
         line_kwargs = {'lw': line_width, 'color': color, 'mfc': marker_face_color}
-        self.line.append(plt.Line2D(x, y, marker='o', alpha=0.8, animated=True, **line_kwargs))
+        self.line.append(plt.Line2D(x, y, marker='o', alpha=1, animated=True, **line_kwargs))
         self._update_line()
         self.ax.add_line(self.line[-1])
 
@@ -273,7 +291,8 @@ class MaskCreator(object):
         if ignore:
             #print ('verts ', not self.showverts, ' inaxes ', event.inaxes, ' event.buton ' ,event.button !=1, ' ind ', self._ind )
             return
-
+        if self.press1 is True:
+            self.canUncolor = True;
         if self._ind is None and event.button ==1:
             'move all vertices'
             if self._polyHeld is True:
@@ -323,6 +342,16 @@ class MaskCreator(object):
         self._thisPoly.set_alpha(0)
         self._thisPoly = None;
 
+
+
+    def check_dims(self, coords):
+        xlim = self.ax.get_xlim()
+        ylim = self.ax.get_ylim()
+        # print("coords 0: ", coords[0], "coords1: ", coords[1], "xlim: ", xlim, "ylim: ", ylim)
+        if coords[0] >= xlim[0] and coords[0] <= xlim[1] and coords[1] >= ylim[1] and coords[1] <= ylim[0]:
+            return True
+        return False
+
     def move_rectangle(self,event, polygon, x, y):
         selectedX, selectedY = (polygon.xy[1])
         beforeX, beforeY = (polygon.xy[0])
@@ -332,17 +361,22 @@ class MaskCreator(object):
         if self._polyHeld is not True:
             return
         # Change selected
-        polygon.xy[1] = selectedX + (x - self.mouseX), selectedY + (y - self.mouseY)
 
-        # Change before vert
-        polygon.xy[0] = beforeX + (x - self.mouseX), beforeY + (y - self.mouseY)
-        polygon.xy[self.last_vert_ind] = beforeX+(x-self.mouseX), beforeY+(y-self.mouseY)
-        
-        # Change after vert
-        polygon.xy[2] = afterX+(x-self.mouseX), afterY+(y-self.mouseY)
-        
-        #Change across vert
-        polygon.xy[3] = acrossX+(x-self.mouseX), acrossY+(y-self.mouseY)
+        new1 = selectedX + (x - self.mouseX), selectedY + (y - self.mouseY)
+        new0 = beforeX + (x - self.mouseX), beforeY + (y - self.mouseY)
+        new2 = afterX + (x - self.mouseX), afterY + (y - self.mouseY)
+        new3 = acrossX + (x - self.mouseX), acrossY + (y - self.mouseY)
+        if(self.check_dims(new1)) is True and self.check_dims(new0) is True and self.check_dims(new2) is True and self.check_dims(new3) is True:
+            polygon.xy[1] = new1
+
+            # Change before vert
+            polygon.xy[0] = new0
+            polygon.xy[self.last_vert_ind] = new0
+            # Change after vert
+            polygon.xy[2] = new2
+            
+            #Change across vert
+            polygon.xy[3] = new3
 
 
 
